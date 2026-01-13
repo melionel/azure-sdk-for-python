@@ -46,6 +46,27 @@ class ConversationValidator(ValidatorInterface):
             )
         return None
 
+    def _validate_list_field(
+        self, item: Dict[str, Any], field_name: str, context: str
+    ) -> Optional[EvaluationException]:
+        """Validate that a field exists and is a dictionary."""
+        if field_name not in item:
+            return EvaluationException(
+                message=f"Each {context} must contain a '{field_name}' field.",
+                blame=ErrorBlame.USER_ERROR,
+                category=ErrorCategory.INVALID_VALUE,
+                target=self.error_target,
+            )
+
+        if not isinstance(item[field_name], list):
+            return EvaluationException(
+                message=f"The '{field_name}' field must be a list in {context}.",
+                blame=ErrorBlame.USER_ERROR,
+                category=ErrorCategory.INVALID_VALUE,
+                target=self.error_target,
+            )
+        return None
+
     def _validate_dict_field(
         self, item: Dict[str, Any], field_name: str, context: str
     ) -> Optional[EvaluationException]:
@@ -262,7 +283,7 @@ class ConversationValidator(ValidatorInterface):
     def _validate_input_messages_list(self, input_messages: Any, input_name: str) -> Optional[EvaluationException]:
         if input_messages is None:
             return EvaluationException(
-                message=f"{input_name} cannot be None.",
+                message=f"{input_name} is a required input and cannot be None.",
                 blame=ErrorBlame.USER_ERROR,
                 category=ErrorCategory.MISSING_FIELD,
                 target=self.error_target,

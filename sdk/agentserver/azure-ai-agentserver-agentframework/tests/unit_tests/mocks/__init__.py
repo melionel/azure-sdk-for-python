@@ -4,5 +4,23 @@
 """Mock implementations for testing."""
 
 from .mock_checkpoint_client import MockFoundryCheckpointClient
+from .mock_conversations_client import (
+    MockAIProjectClient,
+    MockOpenAIClient,
+    MockConversations,
+    MockConversationItems,
+    MockResponsesMessageItemResource,
+    MockItemContentInputText,
+    MockItemContentOutputText,
+)
 
-__all__ = ["MockFoundryCheckpointClient"]
+__all__ = [
+    "MockFoundryCheckpointClient",
+    "MockAIProjectClient",
+    "MockOpenAIClient",
+    "MockConversations",
+    "MockConversationItems",
+    "MockResponsesMessageItemResource",
+    "MockItemContentInputText",
+    "MockItemContentOutputText",
+]

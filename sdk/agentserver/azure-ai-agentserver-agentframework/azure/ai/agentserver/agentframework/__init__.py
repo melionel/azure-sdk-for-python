@@ -11,13 +11,41 @@ from azure.core.credentials_async import AsyncTokenCredential
 from azure.core.credentials import TokenCredential
 
 from azure.ai.agentserver.core.application import PackageMetadata, set_current_app  # pylint: disable=import-error,no-name-in-module
+from azure.ai.agentserver.core.logger import get_project_endpoint  # pylint: disable=import-error,no-name-in-module
 
 from ._version import VERSION
 from ._agent_framework import AgentFrameworkAgent
 from ._ai_agent_adapter import AgentFrameworkAIAgentAdapter
 from ._workflow_agent_adapter import AgentFrameworkWorkflowAdapter
 from ._foundry_tools import FoundryToolsChatMiddleware
-from .persistence import AgentThreadRepository, CheckpointRepository, FoundryCheckpointRepository
+from .persistence import (
+    AgentThreadRepository,
+    CheckpointRepository,
+    FoundryCheckpointRepository,
+    FoundryConversationThreadRepository,
+)
+
+
+def _create_default_thread_repository(
+    credentials: Optional[Union[AsyncTokenCredential, TokenCredential]],
+    project_endpoint: Optional[str] = None,
+) -> Optional[FoundryConversationThreadRepository]:
+    """Create a default FoundryConversationThreadRepository if credentials are available.
+
+    :param credentials: The token credential for authentication.
+    :type credentials: Optional[Union[AsyncTokenCredential, TokenCredential]]
+    :param project_endpoint: The Azure AI Foundry project endpoint.
+    :type project_endpoint: Optional[str]
+    :return: A FoundryConversationThreadRepository instance, or None if requirements are not met.
+    :rtype: Optional[FoundryConversationThreadRepository]
+    """
+    resolved_endpoint = get_project_endpoint() or project_endpoint
+    if not resolved_endpoint or not credentials:
+        return None
+    return FoundryConversationThreadRepository(
+        project_endpoint=resolved_endpoint,
+        credentials=credentials,
+    )
 
 
 @overload
@@ -25,7 +53,8 @@ def from_agent_framework(
         agent: Union[BaseAgent, AgentProtocol],
         /,
         credentials: Optional[Union[AsyncTokenCredential, TokenCredential]] = None,
-        thread_repository: Optional[AgentThreadRepository]=None
+        thread_repository: Optional[AgentThreadRepository] = None,
+        project_endpoint: Optional[str] = None,
     ) -> "AgentFrameworkAIAgentAdapter":
     """
     Create an Agent Framework AI Agent Adapter from an AgentProtocol or BaseAgent.
@@ -35,7 +64,12 @@ def from_agent_framework(
     :param credentials: Optional asynchronous token credential for authentication.
     :type credentials: Optional[Union[AsyncTokenCredential, TokenCredential]]
     :param thread_repository: Optional thread repository for agent thread management.
+        If not provided, a FoundryConversationThreadRepository will be created automatically
+        when credentials and project_endpoint are available.
     :type thread_repository: Optional[AgentThreadRepository]
+    :param project_endpoint: The Azure AI Foundry project endpoint. If not provided,
+        will be read from AZURE_AI_PROJECT_ENDPOINT environment variable.
+    :type project_endpoint: Optional[str]
 
     :return: An instance of AgentFrameworkAIAgentAdapter.
     :rtype: AgentFrameworkAIAgentAdapter
@@ -66,6 +100,8 @@ def from_agent_framework(
     :param credentials: Optional asynchronous token credential for authentication.
     :type credentials: Optional[Union[AsyncTokenCredential, TokenCredential]]
     :param thread_repository: Optional thread repository for agent thread management.
+        If not provided, a FoundryConversationThreadRepository will be created automatically
+        when credentials and project_endpoint are available.
     :type thread_repository: Optional[AgentThreadRepository]
     :param checkpoint_repository: Optional checkpoint repository for workflow checkpointing.
     :type checkpoint_repository: Optional[CheckpointRepository]
@@ -99,6 +135,8 @@ def from_agent_framework(
     :param credentials: Optional asynchronous token credential for authentication.
     :type credentials: Optional[Union[AsyncTokenCredential, TokenCredential]]
     :param thread_repository: Optional thread repository for agent thread management.
+        If not provided, a FoundryConversationThreadRepository will be created automatically
+        when credentials and project_endpoint are available.
     :type thread_repository: Optional[AgentThreadRepository]
     :param checkpoint_repository: Optional checkpoint repository for workflow checkpointing.
     :type checkpoint_repository: Optional[CheckpointRepository]
@@ -115,6 +153,9 @@ def from_agent_framework(
     :raises ValueError: If managed_checkpoints=True but required parameters are missing,
                        or if both managed_checkpoints=True and checkpoint_repository are provided.
     """
+    # Create default thread repository if not provided
+    if thread_repository is None:
+        thread_repository = _create_default_thread_repository(credentials, project_endpoint)
 
     if isinstance(agent_or_workflow, WorkflowBuilder):
         return AgentFrameworkWorkflowAdapter(

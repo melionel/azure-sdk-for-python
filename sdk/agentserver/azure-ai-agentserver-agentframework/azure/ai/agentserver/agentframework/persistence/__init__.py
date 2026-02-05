@@ -11,6 +11,9 @@ from .checkpoint_repository import (
 )
 from ._foundry_checkpoint_storage import FoundryCheckpointStorage
 from ._foundry_checkpoint_repository import FoundryCheckpointRepository
+from ._foundry_conversation_message_store import FoundryConversationMessageStore
+from ._foundry_conversation_agent_thread import FoundryConversationAgentThread
+from ._foundry_conversation_thread_repository import FoundryConversationThreadRepository
 
 __all__ = [
     "AgentThreadRepository",
@@ -22,4 +25,7 @@ __all__ = [
     "FileCheckpointRepository",
     "FoundryCheckpointStorage",
     "FoundryCheckpointRepository",
+    "FoundryConversationMessageStore",
+    "FoundryConversationAgentThread",
+    "FoundryConversationThreadRepository",
 ]
